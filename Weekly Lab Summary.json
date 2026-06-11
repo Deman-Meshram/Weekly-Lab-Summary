@@ -1,0 +1,154 @@
+{
+  "name": "Weekly Lab Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "27b9aeab-c7bc-4e6f-aadc-37c7047b61e5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appW0MwZ9Xm9vUSPa",
+          "mode": "list",
+          "cachedResultName": "Biotech Automation",
+          "cachedResultUrl": "https://airtable.com/appW0MwZ9Xm9vUSPa"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbluYQUkLVIYSBJL5",
+          "mode": "list",
+          "cachedResultName": "Lab Inventory",
+          "cachedResultUrl": "https://airtable.com/appW0MwZ9Xm9vUSPa/tbluYQUkLVIYSBJL5"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "3ea9a059-1c01-4f17-82fa-802e903042e1",
+      "name": "Search records",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "y6meb9PHVtZ35e2r",
+          "name": "Airtable OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nlet rows = '';\n\n// Count summary\nlet total = items.length;\nlet critical = items.filter(i => i.json.fields.Status === 'CRITICAL').length;\nlet low = items.filter(i => i.json.fields.Status === 'LOW').length;\nlet healthy = items.filter(i => i.json.fields.Status === 'GOOD').length;\nlet expired = items.filter(i => i.json.fields['Expiry Status'] === 'EXPIRED').length;\nlet expiringSoon = items.filter(i => i.json.fields['Expiry Status'] === 'EXPIRING SOON').length;\n\n// Expiry alert list\nlet expiryItems = items\n  .filter(i => ['EXPIRED', 'EXPIRING SOON'].includes(i.json.fields['Expiry Status']))\n  .map(i => `<li>${i.json.fields['Item Name']} — <b>${i.json.fields['Expiry Status']}</b> (${i.json.fields['Expiry Date'] || 'No Date'})</li>`)\n  .join('');\n\nitems.forEach(item => {\n  const f = item.json.fields;\n  const statusColor =\n    f.Status === 'CRITICAL' ? '#ff0000' :\n    f.Status === 'LOW' ? '#ff8c00' : '#008000';\n  const expiryColor =\n    f['Expiry Status'] === 'EXPIRED' ? '#ff0000' :\n    f['Expiry Status'] === 'EXPIRING SOON' ? '#ff8c00' : '#008000';\n  rows += `\n    <tr>\n      <td style=\"padding:8px;border:1px solid #ddd\">${f['Item Name']}</td>\n      <td style=\"padding:8px;border:1px solid #ddd\">${f['Current Stock']} ${f['Unit']}</td>\n      <td style=\"padding:8px;border:1px solid #ddd\">${f['Minimum Threshold']} ${f['Unit']}</td>\n      <td style=\"padding:8px;border:1px solid #ddd\">${f['Supplier']}</td>\n      <td style=\"padding:8px;border:1px solid #ddd;color:${statusColor};font-weight:bold\">${f.Status}</td>\n      <td style=\"padding:8px;border:1px solid #ddd;color:${expiryColor};font-weight:bold\">${f['Expiry Status'] || 'No Date'}</td>\n    </tr>\n  `;\n});\n\nconst html = `\n<h2 style=\"color:#2c3e50\">📋 Weekly Lab Inventory Report</h2>\n\n<div style=\"background:#f5f5f5;padding:12px;border-radius:6px;margin-bottom:16px\">\n  <h3 style=\"margin:0 0 8px 0\">📊 Inventory Summary</h3>\n  <p style=\"margin:4px 0\">Total Items: <b>${total}</b></p>\n  <p style=\"margin:4px 0;color:#ff0000\">Critical Stock: <b>${critical}</b></p>\n  <p style=\"margin:4px 0;color:#ff8c00\">Low Stock: <b>${low}</b></p>\n  <p style=\"margin:4px 0;color:#008000\">Healthy Items: <b>${healthy}</b></p>\n  <p style=\"margin:4px 0;color:#ff0000\">Expired Items: <b>${expired}</b></p>\n  <p style=\"margin:4px 0;color:#ff8c00\">Expiring Soon: <b>${expiringSoon}</b></p>\n</div>\n\n<p>Here is your complete inventory status for this week:</p>\n<table style=\"border-collapse:collapse;width:100%\">\n  <tr style=\"background:#2c3e50;color:white\">\n    <th style=\"padding:8px;border:1px solid #ddd\">Item</th>\n    <th style=\"padding:8px;border:1px solid #ddd\">Current Stock</th>\n    <th style=\"padding:8px;border:1px solid #ddd\">Minimum Required</th>\n    <th style=\"padding:8px;border:1px solid #ddd\">Supplier</th>\n    <th style=\"padding:8px;border:1px solid #ddd\">Stock Status</th>\n    <th style=\"padding:8px;border:1px solid #ddd\">Expiry Status</th>\n  </tr>\n  ${rows}\n</table>\n\n<br>\n<div style=\"background:#ffe0e0;padding:12px;border-radius:6px\">\n  <p style=\"margin:0\"><b>🧪 Expiry Alerts:</b></p>\n  <ul>${expiryItems}</ul>\n</div>\n\n<br>\n<p style=\"color:gray;font-size:12px\"><i>Weekly report by Lab Inventory System</i></p>\n`;\n\nreturn [{ json: { html } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d3d1ce06-ce6a-443c-8569-c84bc76780b4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "roylee000002@gmail.com",
+        "subject": "📊 Weekly Lab Inventory Report",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "67e972a9-6590-464c-a00f-ed2084f6e79f",
+      "name": "Send a message",
+      "webhookId": "72f6c8df-67fd-4d15-aa50-4a586f56b77b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "OrZFSQuzaE8B9tpn",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "33082bfd-c814-4fce-abd6-5e283f1b21d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e7ea9f942d522f0faaaeb740566eb23eb2fe592628499c83cacfa121be29288c"
+  },
+  "nodeGroups": [],
+  "id": "2gQSoedLCKpLTCDL",
+  "tags": [
+    {
+      "updatedAt": "2026-06-09T07:09:52.039Z",
+      "createdAt": "2026-06-09T07:09:52.039Z",
+      "id": "25QcafTS16WgSsZy",
+      "name": "Complete"
+    }
+  ]
+}
