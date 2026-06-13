@@ -1,5 +1,10 @@
 # Weekly Lab Summary — Automated Inventory Report
 
+## 🎬 Demo Video
+[▶ Watch Demo on YouTube](https://youtu.be/Yn6J2-W_OXk)
+
+---
+
 > Automated weekly lab inventory summary with stock levels and expiry tracking delivered via Gmail every week.
 
 
